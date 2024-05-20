@@ -89,9 +89,12 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Closes.pas"/>
-        <DCCReference Include="Styles.pas"/>
+        <DCCReference Include="Cloth.pas"/>
         <DCCReference Include="Users.pas"/>
+        <DCCReference Include="TmyList.pas"/>
+        <DCCReference Include="DataBaseUser.pas"/>
+        <DCCReference Include="Styles.pas"/>
+        <DCCReference Include="DataBaseStyles.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -129,7 +132,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="D:\Win32\Debug\Fashion_course.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\Fashion_course.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>Fashion_course.exe</RemoteName>
                         <Overwrite>true</Overwrite>
