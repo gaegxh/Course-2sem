@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.626,D:\Project4.dproj=D:\Fashion_course.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.853,D:\Курсовая\Look.pas=D:\Курсовая\LookFashion.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.829,D:\Курсовая\DataBaseUser.pas=D:\Курсовая\DataBase.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.172,=D:\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.648,=D:\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.326,D:\Unit1.pas=D:\Closes.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.430,D:\Курсовая\Styles.pas=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.973,D:\User.pas=D:\Users.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.336,D:\Курсовая\Closes.pas=D:\Курсовая\Cloth.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.314,D:\Styles.pas=D:\Курсовая\Styles.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.108,D:\Users.pas=D:\Курсовая\Users.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.667,D:\Style.pas=D:\Styles.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.980,=D:\Курсовая\GenreteLook.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.053,=D:\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.308,D:\Closes.pas=D:\Курсовая\Closes.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.646,D:\Курсовая\Unit1.pas=D:\Курсовая\DataBaseStyles.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.160,=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.934,D:\Курсовая\TmyList.pas=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.186,D:\Курсовая\DataBase.pas=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.747,D:\Fashion_course.dproj=D:\Курсовая\Fashion_course.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.025,=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.642,=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.997,D:\Unit1.pas=D:\Style.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.513,D:\Unit1.pas=D:\User.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.367,D:\Курсовая\Unit1.pas=D:\Курсовая\Look.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.163,=D:\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.010,=D:\Курсовая\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

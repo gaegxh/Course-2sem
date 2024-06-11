@@ -1,16 +1,15 @@
 unit Users;
 
 interface
-
+uses Cloth;
 type
   TUser = record
     Id:integer;
-    name: string[12];
-    login: string[12];
+    name: string;
+    login: string;
     password: string[12];
-    waist: integer;
-    shoulders: integer;
-    hips: integer;
+    size:Tsize;
+    gender:Tgender;
 
   end;
 
@@ -19,6 +18,8 @@ type
 
 
 implementation
+
+
 
 
 
