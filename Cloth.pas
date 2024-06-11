@@ -2,9 +2,10 @@ unit Cloth;
 
 interface
 
-uses TmyList, SysUtils;
+uses TmyList, SysUtils, Generics.Collections;
 
 type
+  TCheckTable = TDictionary<string, Boolean>;
 
   TClothing = (
     // Верхняя одежда
@@ -71,12 +72,13 @@ type
     Goloise, // Бирюзовый
     Lavender, // Лавандовый
     Marood, // Золотой
-    Silver // Серебряный
+    Silver,
+    NavyBlue,
+    Grey
     );
 
-  Tsize = (XXS, XS, S, M, L, XL, XXL);
-  Tgender = (Man, Women);
-
+  Tsize = (None, XXS, XS, S, M, L, XL, XXL);
+  Tgender = (gNone, Man, Women);
 
 type
   TModel = (oversize, // большой размер
@@ -91,17 +93,18 @@ type
     pear // груша
     );
 
+  TSizeMask = byte;
+  TmodelMask = byte;
+  TgenderMask = byte;
+  TcolorMask = word;
+
   TCloth = record
     id: integer;
-    model: TModel;
+    model: TmodelMask;
     name: TClothing;
-    size: Tsize;
-    waist: integer;
-    shoulders: integer;
-    hips: integer;
-    color: TColor;
-    gender: Tgender;
-
+    sizeMask: TSizeMask;
+    color: TcolorMask; // Битовая маска для размеров
+    gender: TgenderMask;
   end;
 
   TSearch = record
@@ -115,20 +118,116 @@ var
 
 procedure InitializeArrays(var ListSearch: TmyList<TSearch>;
   var ListCloth: TmyList<TCloth>);
-procedure InsertionSort(var ListSearch: TmyList<TSearch>);
-procedure HeapSort(var ListSearch: TmyList<TSearch>); overload;
-procedure BlockSearch(var A: TmyList<TSearch>; const S: TClothing);
+procedure InsertionSort(var ListSearch: TmyList<TCloth>);
+function StrToGender(gender: string): Tgender;
+
 function ClothTostr(name: TClothing): string;
 function TModelToStr(model: TModel): string;
-function StrToCloth(Name: string): Tclothing;
-function ColorToStr(Color: TColor): string;
-function StrToModel(Name: string): TModel;
-function StrToColor(Name: string): TColor;
-procedure SafeToCloth(var ListCloth: TMyList<TCloth>);
-procedure LoadFromCloth(var ListCloth: TMyList<TCloth>);
+function StrToCloth(name: string): TClothing;
+function StrToSize(const SizeStr: string): Tsize;
+function ColorToStr(color: TColor): string;
+function StrToModel(name: string): TModel;
+function StrToColor(name: string): TColor;
+procedure SafeToCloth(var ListCloth: TmyList<TCloth>);
+procedure LoadFromCloth(var ListCloth: TmyList<TCloth>);
+procedure InitSearchList(var SearchList: TmyList<TSearch>;
+  var ClothList: TmyList<TCloth>);
+function HasSize(Cloth: TCloth; Size: Tsize): Boolean;
+function Hasgender(Cloth: TCloth; gender: Tgender): Boolean;
+function HasModel(Cloth: TCloth; model: TModel): Boolean;
+function SizeToStr(Size: Tsize): string;
+function BinarySearch(var A: TmyList<TCloth>; const S: TClothing): TCloth;
+function GenderToStr(gender: TGender): string;
+function HasColor(Cloth: TCloth; color: TColor): Boolean;
+
+
 
 
 implementation
+
+uses Styles, LookFashion,users;
+
+
+
+function SizeToMask(Size: Tsize): TSizeMask;
+begin
+  Result := 1 shl Ord(Size);
+end;
+
+procedure AddSize(var Cloth: TCloth; Size: Tsize);
+begin
+  Cloth.sizeMask := Cloth.sizeMask or SizeToMask(Size);
+end;
+
+procedure RemoveSize(var Cloth: TCloth; Size: Tsize);
+begin
+  Cloth.sizeMask := Cloth.sizeMask and not SizeToMask(Size);
+end;
+
+function HasSize(Cloth: TCloth; Size: Tsize): Boolean;
+begin
+  Result := (Cloth.sizeMask and SizeToMask(Size)) <> 0;
+end;
+
+function ModelToMask(model: TModel): TmodelMask;
+begin
+  Result := 1 shl Ord(model);
+end;
+
+procedure RemoveModel(var Cloth: TCloth; model: TModel);
+begin
+  Cloth.model := Cloth.model and not ModelToMask(model);
+end;
+
+function HasModel(Cloth: TCloth; model: TModel): Boolean;
+begin
+  Result := (Cloth.model and ModelToMask(model)) <> 0;
+end;
+
+procedure AddModel(var Cloth: TCloth; model: TModel);
+begin
+  Cloth.model := Cloth.model or ModelToMask(model);
+end;
+
+function GenderToMask(gender: Tgender): TgenderMask;
+begin
+  Result := 1 shl Ord(gender);
+end;
+
+procedure Removegender(var Cloth: TCloth; gender: Tgender);
+begin
+  Cloth.gender := Cloth.gender and not GenderToMask(gender);
+end;
+
+function Hasgender(Cloth: TCloth; gender: Tgender): Boolean;
+begin
+  Result := (Cloth.gender and GenderToMask(gender)) <> 0;
+end;
+
+procedure Addgender(var Cloth: TCloth; gender: Tgender);
+begin
+  Cloth.gender := Cloth.gender or GenderToMask(gender);
+end;
+
+function ColorToMask(color: TColor): TcolorMask;
+begin
+  Result := 1 shl Ord(color);
+end;
+
+procedure AddColor(var Cloth: TCloth; color: TColor);
+begin
+  Cloth.color := Cloth.color or ColorToMask(color);
+end;
+
+procedure RemoveColor(var Cloth: TCloth; color: TColor);
+begin
+  Cloth.color := Cloth.color and not ColorToMask(color);
+end;
+
+function HasColor(Cloth: TCloth; color: TColor): Boolean;
+begin
+  Result := (Cloth.color and ColorToMask(color)) <> 0;
+end;
 
 function ClothTostr(name: TClothing): string;
 begin
@@ -244,9 +343,71 @@ begin
   end;
 end;
 
+function SizeToStr(Size: Tsize): string;
+begin
+  case Size of
+    XXS:
+      Result := 'XXS';
+    XS:
+      Result := 'XS';
+    S:
+      Result := 'S';
+    M:
+      Result := 'M';
+    L:
+      Result := 'L';
+    XL:
+      Result := 'XL';
+    XXL:
+      Result := 'XXL';
+  else
+    Result := 'Unknown Size';
+  end;
+end;
+
+function StrToGender(gender: string): Tgender;
+begin
+  if gender = 'Man' then
+    Result := Man
+  else if gender = 'Women' then
+    Result := Women
+  else
+    raise Exception.Create('Invalid gender string: ' + gender);
+end;
 
 
-function StrToModel(Name: string): TModel;
+function GenderToStr(gender: TGender): string;
+begin
+  case gender of
+    Man:
+      Result := 'Man';
+    Women:
+      Result := 'Women';
+    else
+      raise Exception.Create('Invalid gender value');
+  end;
+end;
+function StrToSize(const SizeStr: string): Tsize;
+begin
+  if SizeStr = 'XXS' then
+    Result := XXS
+  else if SizeStr = 'XS' then
+    Result := XS
+  else if SizeStr = 'S' then
+    Result := S
+  else if SizeStr = 'M' then
+    Result := M
+  else if SizeStr = 'L' then
+    Result := L
+  else if SizeStr = 'XL' then
+    Result := XL
+  else if SizeStr = 'XXL' then
+    Result := XXL
+  else
+    raise Exception.Create('Invalid size string: ' + SizeStr);
+end;
+
+function StrToModel(name: string): TModel;
 begin
   if Name = 'oversize' then
     Result := oversize
@@ -270,43 +431,42 @@ begin
     Result := pear
 end;
 
-
 procedure InitializeArrays(var ListSearch: TmyList<TSearch>;
   var ListCloth: TmyList<TCloth>);
 var
-  i: integer;
   Cloth: TCloth;
   Search: TSearch;
+  i: integer;
 begin
-  // Инициализация массива ListCloth
   ListCloth := TmyList<TCloth>.Create;
   ListSearch := TmyList<TSearch>.Create;
-  randomize;
-  for i := 0 to 1000000 - 1 do
+  Randomize;
+
+  // Создаем список доступных моделей одежды
+  for i := Ord(Low(TClothing)) to Ord(High(TClothing)) do
   begin
-    Cloth.id := i;
-    Cloth.model := TModel(Random(10)); // Генерация случайной модели
-    Cloth.name := TClothing(Random(36)); // Генерация случайного типа одежды
-    Cloth.size := Tsize(7);
-    // Здесь можно также использовать случайную генерацию
-    Cloth.waist := Random(50) + 50; // Генерация случайной талии от 50 до 100
-    Cloth.shoulders := Random(50) + 50; // Генерация случайных плеч от 50 до 100
-    Cloth.hips := Random(50) + 50; // Генерация случайных бедер от 50 до 100
-    Cloth.color := TColor(Random(20)); // Генерация случайного цвета
-    Cloth.gender := Tgender(Random(2)); // Генерация случайного пола
+
+    Cloth.id := ((((i + 3) * 1000) mod 13) * 4) div 17;
+    Cloth.name := TClothing(i);
+
+    Cloth.sizeMask := $FF;
+    Cloth.model := $FF;
+    Cloth.gender := $FF;
+    Cloth.color := $FF;
+
     Search.name := Cloth.name;
     Search.index := i;
+
     ListSearch.Add(Search);
     ListCloth.Add(Cloth);
   end;
-
 end;
 
-procedure InsertionSort(var ListSearch: TmyList<TSearch>);
+procedure InsertionSort(var ListSearch: TmyList<TCloth>);
 
 var
   i, j: integer;
-  x: TSearch;
+  x: TCloth;
   y: integer;
   n: integer;
 begin
@@ -335,126 +495,32 @@ begin
 
 end;
 
-procedure Heapify(var ListSearch: TmyList<TSearch>; n, i: integer); overload;
+
+function BinarySearch(var A: TmyList<TCloth>; const S: TClothing): TCloth;
 var
-  Largest, L, R: integer;
+  L, R, M: integer;
 begin
-  Largest := i;
-  L := 2 * i + 1;
-  R := 2 * i + 2;
 
-  if (L < n) and (ListSearch.GetItemsCounter(L).name >
-    ListSearch.GetItemsCounter(Largest).name) then
-    Largest := L;
+  L := 0;
+  R := A.LengthList - 1;
 
-  if (R < n) and (ListSearch.GetItemsCounter(R).name >
-    ListSearch.GetItemsCounter(Largest).name) then
-    Largest := R;
-
-  if Largest <> i then
+  while L <= R do
   begin
-    ListSearch.Swap(Largest, i);
-    Heapify(ListSearch, n, Largest);
+    M := (L + R) div 2;
+
+    if A.GetItemsCounter(M).name = S then
+    begin
+      Result := A.GetItemsCounter(M);
+      Exit;
+    end
+    else if A.GetItemsCounter(M).name < S then
+      L := M + 1
+    else
+      R := M - 1;
   end;
 end;
 
-procedure HeapSort(var ListSearch: TmyList<TSearch>);
-var
-  n, i: integer;
-begin
-  n := ListSearch.LengthList;
-
-  for i := n div 2 - 1 downto 0 do
-    Heapify(ListSearch, n, i);
-
-  for i := n - 1 downto 0 do
-  begin
-    ListSearch.Swap(0, i);
-    Heapify(ListSearch, i, 0);
-  end;
-end;
-
-procedure BlockSearch(var A: TmyList<TSearch>; const S: TClothing);
-var
-  f: boolean;
-  right, left, lenblock, M: integer;
-begin
-  writeln('БЛОЧНЫЙ ПОИСК СТРОКИ');
-  M := A.LengthList;
-
-  f := false;
-  left := 1;
-  lenblock := trunc(sqrt(M));
-  right := lenblock;
-
-  while (not f) and (lenblock > 1) do
-  begin
-
-    if S > A.GetItemsCounter(right).name then
-    begin
-      while (S > A.GetItemsCounter(right).name) and (right < M) do
-      begin
-
-        right := right + lenblock;
-        left := left + lenblock;
-
-        if right > M then
-        begin
-          writeln(ClothTostr(A.GetItemsCounter(right).name));
-          left := left + 1;
-          right := M;
-          lenblock := right - left + 1;
-
-        end;
-      end;
-
-    end;
-
-    if (S < A.GetItemsCounter(right).name) then
-    begin
-      // writeln(CloseTostr(A.GetItemsCounter(right).name));
-      lenblock := trunc(sqrt(lenblock));
-      right := left + lenblock - 1;
-    end;
-
-    if A.GetItemsCounter(right).name = S then
-    begin
-      f := true;
-      writeln(ClothTostr(A.GetItemsCounter(right).name))
-
-    end;
-
-  end;
-  if lenblock = 1 then
-  begin
-    var
-      count: integer;
-    while (not f) and (left <= right) do
-    begin
-      if A.GetItemsCounter(left).name = S then
-      begin
-        f := true;
-        writeln(ClothTostr(A.GetItemsCounter(left).name))
-      end
-      else
-      begin
-        left := left + 1;
-      end;
-    end;
-
-  end;
-  if f then
-  begin
-    writeln('Найдена такая строка');
-
-  end
-  else
-    writeln('Такой строки нет');
-
-  writeln;
-end;
-
-function StrToCloth(Name: string): Tclothing;
+function StrToCloth(name: string): TClothing;
 begin
   if Name = 'T-Shirt' then
     Result := TShirt
@@ -538,33 +604,53 @@ begin
     Result := HaremPants
 end;
 
-function ColorToStr(Color: TColor): string;
+function ColorToStr(color: TColor): string;
 begin
-  case Color of
-    Red: Result := 'Red';
-    Blue: Result := 'Blue';
-    Green: Result := 'Green';
-    Yellow: Result := 'Yellow';
-    Orange: Result := 'Orange';
-    Purple: Result := 'Purple';
-    Pink: Result := 'Pink';
-    Brown: Result := 'Brown';
-    Black: Result := 'Black';
-    White: Result := 'White';
-    Gray: Result := 'Gray';
-    Cyan: Result := 'Cyan';
-    Magenta: Result := 'Magenta';
-    Turqun: Result := 'Turqun';
-    Indigo: Result := 'Indigo';
-    Teal: Result := 'Teal';
-    Goloise: Result := 'Goloise';
-    Lavender: Result := 'Lavender';
-    Marood: Result := 'Marood';
-    Silver: Result := 'Silver';
+  case color of
+    Red:
+      Result := 'Red';
+    Blue:
+      Result := 'Blue';
+    Green:
+      Result := 'Green';
+    Yellow:
+      Result := 'Yellow';
+    Orange:
+      Result := 'Orange';
+    Purple:
+      Result := 'Purple';
+    Pink:
+      Result := 'Pink';
+    Brown:
+      Result := 'Brown';
+    Black:
+      Result := 'Black';
+    White:
+      Result := 'White';
+    Gray:
+      Result := 'Gray';
+    Cyan:
+      Result := 'Cyan';
+    Magenta:
+      Result := 'Magenta';
+    Turqun:
+      Result := 'Turqun';
+    Indigo:
+      Result := 'Indigo';
+    Teal:
+      Result := 'Teal';
+    Goloise:
+      Result := 'Goloise';
+    Lavender:
+      Result := 'Lavender';
+    Marood:
+      Result := 'Marood';
+    Silver:
+      Result := 'Silver';
   end;
 end;
 
-function StrToColor(Name: string): TColor;
+function StrToColor(name: string): TColor;
 begin
   if Name = 'Red' then
     Result := Red
@@ -608,13 +694,11 @@ begin
     Result := Silver
 end;
 
-
-
-procedure SafeToCloth(var ListCloth: TMyList<TCloth>);
+procedure SafeToCloth(var ListCloth: TmyList<TCloth>);
 var
   ClothFile: File of TCloth;
   Filename: string;
-  i: Integer;
+  i: integer;
   ClothItem: TCloth;
 begin
   Filename := 'D:\Курсовая\Win32\Debug\Cloth.dat';
@@ -635,8 +719,7 @@ begin
   end;
 end;
 
-
-procedure LoadFromCloth(var ListCloth: TMyList<TCloth>);
+procedure LoadFromCloth(var ListCloth: TmyList<TCloth>);
 var
   ClothFile: File of TCloth;
   Filename: string;
@@ -659,6 +742,133 @@ begin
   end;
 end;
 
+procedure InitSearchList(var SearchList: TmyList<TSearch>;
+  var ClothList: TmyList<TCloth>);
+var
+  i: integer;
+  Search: TSearch;
+
+begin
+  for i := 0 to ClothList.LengthList - 1 do
+  begin
+    Search.name := ClothList.GetItemsCounter(i).name;
+    Search.index := i;
+    SearchList.Add(Search);
+  end;
+
+end;
+
+
+
+function ValidLookuser(var elem: TCloth; var user: tuser): Boolean;
+var
+  fl: Boolean;
+  fl1: Boolean;
+begin
+  fl := HasSize(elem, user.Size);
+  fl1 := Hasgender(elem, user.gender);
+  if fl and fl1 then
+  begin
+    Result := true;
+  end
+  else
+    Result := false;
+
+end;
+
+procedure SearchLook(var ListCloth: TmyList<TCloth>; var ListStyle: Pstyle;
+  var user: tuser; var mas: Tlistlook);
+
+var
+  Current: Pstyle;
+  Cloth: TCloth;
+  Temp: look;
+  i: integer;
+  fl1: Boolean;
+  fl2: Boolean;
+  ColorCheckTable: TDictionary<string, Boolean>;
+  ModelCheckTable: TDictionary<string, Boolean>;
+  UserCheckTable: TDictionary<string, Boolean>;
+
+  function CheckModelChached(var Cloth: TCloth; var model: TModel): Boolean;
+  var
+    Key: string;
+  begin
+    Key := ClothTostr(Cloth.name) + TModelToStr(model);
+    if not ModelCheckTable.TryGetValue(Key, Result) then
+    begin
+      Result := HasModel(Cloth, model);
+      ModelCheckTable.Add(Key, Result);
+    end;
+
+  end;
+
+  function ChekColorChached(var Cloth: TCloth; var color: TColor): Boolean;
+  var
+    Key: string;
+  begin
+    Key := ClothTostr(Cloth.name) + ColorToStr(color);
+    if not ColorCheckTable.TryGetValue(Key, Result) then
+    begin
+      Result := HasColor(Cloth, color);
+      ColorCheckTable.Add(Key, Result);
+    end;
+
+  end;
+
+  function ChekUserChached(var Cloth: TCloth; var user: tuser): Boolean;
+  var
+    Key: string;
+  begin
+    Key := ClothTostr(Cloth.name) + user.name;
+    if not UserCheckTable.TryGetValue(Key, Result) then
+    begin
+      Result := ValidLookuser(Cloth, user);
+      UserCheckTable.Add(Key, Result);
+
+    end;
+
+  end;
+
+begin
+  i := 1;
+  ColorCheckTable := TDictionary<string, Boolean>.Create;
+  ModelCheckTable := TDictionary<string, Boolean>.Create;
+  UserCheckTable := TDictionary<string, Boolean>.Create;
+
+  Current := ListStyle.next;
+  while Current <> nil do
+  begin
+    setlength(mas, i);
+    Temp.cloth1 := BinarySearch(ListCloth, Current.elem.fashion1);
+    Temp.Cloth2 := BinarySearch(ListCloth, Current.elem.fashion2);
+
+    fl1 := ChekColorChached(Temp.cloth1, Current.elem.color1) and
+      CheckModelChached(Temp.cloth1, Current.elem.model1) and
+      ChekUserChached(Temp.cloth1, user);
+    fl2 := ChekColorChached(Temp.Cloth2, Current.elem.color2) and
+      CheckModelChached(Temp.Cloth2, Current.elem.model2) and
+      ChekUserChached(Temp.Cloth2, user);
+
+    if fl1 or fl2 then
+    begin
+      Inc(i);
+      setlength(mas, i);
+      if fl1 then
+      begin
+        mas[i - 1].cloth1 := Temp.cloth1;
+      end
+      else
+      begin
+        mas[i - 1].cloth1 := Temp.Cloth2;
+      end;
+    end;
+
+    Current := Current.next;
+
+  end;
+
+end;
 
 
 
